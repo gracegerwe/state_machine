@@ -1,48 +1,42 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "actuator.h"
-#include "state_machine.h"
+#include "hal.h"
 
 #define INPUT_BUF_SIZE 100
 
 int main() {
-  Actuator a = {.state = IDLE, .position = 0, .target = 0};
-  int user_input;
-
+  hal_init();
   char input_buf[INPUT_BUF_SIZE];
 
+  printf(
+      "🎮 Type commands like: open valve1 90, inject valve1, reset valve1, "
+      "status, exit\n\n");
+
   while (1) {
-    if (a.state == IDLE && a.position == a.target) {
-      printf(
-          "Enter a number between 0 and 180 to set a new actuator target or "
-          "type 'exit': ");
-      fflush(stdout);
+    hal_tick();  // run logic per tick
 
-      if (fgets(input_buf, INPUT_BUF_SIZE, stdin)) {
-        // Remove newline if present
-        input_buf[strcspn(input_buf, "\n")] = 0;
+    printf("> ");
+    fflush(stdout);
+    if (!fgets(input_buf, INPUT_BUF_SIZE, stdin)) continue;
 
-        if (strcmp(input_buf, "exit") == 0 || strcmp(input_buf, "q") == 0) {
-          printf("👋 Exiting.\n");
-          break;
-        }
+    input_buf[strcspn(input_buf, "\n")] = 0;
 
-        int user_input;
-        if (sscanf(input_buf, "%d", &user_input) == 1) {
-          if (user_input >= 0 && user_input <= 180) {
-            a.target = user_input;
-            printf("📨 Command received: Move to %d degrees\n", user_input);
-          } else {
-            printf("❌ Out of range. Please enter a number from 0 to 180.\n");
-          }
-        } else {
-          printf("⚠️ Invalid input. Please enter a number or type 'exit'.\n");
-        }
-      }
+    if (strncmp(input_buf, "exit", 4) == 0) break;
+
+    char name[16];
+    int val;
+    if (sscanf(input_buf, "open %s %d", name, &val) == 2) {
+      hal_set_target(name, val);
+    } else if (sscanf(input_buf, "inject %s", name) == 1) {
+      hal_inject_fault(name);
+    } else if (sscanf(input_buf, "reset %s", name) == 1) {
+      hal_reset_fault(name);
+    } else if (strncmp(input_buf, "status", 6) == 0) {
+      hal_print_status();
+    } else {
+      printf("❌ Unknown command.\n");
     }
-
-    update_state_machine(&a);
   }
 
   return 0;

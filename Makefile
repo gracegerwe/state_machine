@@ -1,8 +1,13 @@
-all: state_machine
+CC = gcc
+CFLAGS = -Wall -Wextra
 
-state_machine: main.c
-	@gcc -o state_machine main.c
-	@echo "✅ Build complete."
+SRC = main.c hal.c
+TARGET = state_machine
+
+all: $(TARGET)
+
+$(TARGET): $(SRC)
+	$(CC) $(CFLAGS) -o $@ $(SRC)
 
 clean:
-	rm -f state_machine
+	rm -f $(TARGET) *.o
