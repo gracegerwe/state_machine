@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "actuator.h"
+#include "state_machine.h"
 
 void update_state_machine(Actuator *a) {
   switch (a->state) {
